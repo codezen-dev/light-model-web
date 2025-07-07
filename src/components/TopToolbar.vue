@@ -19,9 +19,6 @@ import { useModelStore } from '@/store/model'
 
 const modelStore = useModelStore()
 
-function createElement() {
-  modelStore.createElement('新结构', 'Block')
-}
 
 function clearModel() {
   modelStore.clear()
