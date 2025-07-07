@@ -67,9 +67,11 @@ const loadNode = async (node: any, resolve: (children: any[]) => void) => {
   }
 }
 
-const onSelect = (node: any) => {
-  model.selectElement(node)
+const onSelect = async (node: Element) => {
+  const res = await axios.get(`/api/elements/${node.id}`)
+  model.selectElement(res.data)
 }
+
 
 const onRightClick = async (event: MouseEvent, data: any, node: any) => {
   event.preventDefault()

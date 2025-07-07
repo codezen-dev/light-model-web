@@ -1,56 +1,85 @@
 <template>
-  <el-form label-width="80px" v-if="selected">
-    <el-form-item label="名称">
-      <el-input v-model="form.name" @change="update" />
-    </el-form-item>
-    <el-form-item label="类型">
-      <el-input v-model="form.type" @change="update" />
-    </el-form-item>
-    <el-form-item label="说明">
-      <el-input type="textarea" v-model="form.documentation" @change="update" />
-    </el-form-item>
-  </el-form>
-  <div v-else class="text-gray-500">未选择结构</div>
+  <el-card shadow="never" v-if="selected">
+    <template #header>
+      <div class="flex justify-between items-center">
+        <span>属性编辑器</span>
+        <el-button size="small" type="primary" @click="save">保存</el-button>
+      </div>
+    </template>
+
+    <el-form label-width="100px" :model="local">
+      <el-form-item label="名称">
+        <el-input v-model="local.name" />
+      </el-form-item>
+
+      <el-form-item label="类型">
+        <el-input v-model="local.metadata.type" placeholder="如：Integer 或 Signal" />
+      </el-form-item>
+
+      <el-form-item label="多重性">
+        <el-input v-model="local.metadata.multiplicity" placeholder="如：1..1, 0..*" />
+      </el-form-item>
+
+      <el-form-item label="默认值">
+        <el-input v-model="local.metadata.defaultValue" placeholder="如：100, true" />
+      </el-form-item>
+
+      <el-form-item label="方向">
+        <el-select v-model="local.metadata.direction" placeholder="请选择">
+          <el-option label="in" value="in" />
+          <el-option label="out" value="out" />
+          <el-option label="inout" value="inout" />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="修饰符">
+        <el-checkbox-group v-model="local.metadata.modifiers">
+          <el-checkbox label="ordered" />
+          <el-checkbox label="public" />
+          <el-checkbox label="private" />
+          <el-checkbox label="protected" />
+          <el-checkbox label="readonly" />
+        </el-checkbox-group>
+      </el-form-item>
+
+      <el-form-item label="说明">
+        <el-input v-model="local.documentation" type="textarea" rows="2" />
+      </el-form-item>
+    </el-form>
+  </el-card>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { watch, reactive } from 'vue'
 import { useModelStore } from '@/store/model'
+import type { Element } from '@/types/element'
 
 const model = useModelStore()
-const selected = computed(() => model.selected)
-
-const form = reactive({
+const selected = model.selected
+const local = reactive<Element>({
+  id: '',
   name: '',
   type: '',
-  documentation: ''
+  documentation: '',
+  modifiers: [],
+  metadata: {},
+  owner: undefined,
+  children: []
 })
 
 watch(
-    selected,
-    (val) => {
-      if (val) {
-        form.name = val.name
-        form.type = val.type
-        form.documentation = val.documentation || ''
+    () => model.selected,
+    (newVal) => {
+      if (newVal) {
+        Object.assign(local, JSON.parse(JSON.stringify(newVal))) // 深拷贝
+        if (!local.metadata) local.metadata = {}
+        if (!local.metadata.modifiers) local.metadata.modifiers = []
       }
     },
     { immediate: true }
 )
 
-const update = () => {
-  if (selected.value) {
-    model.updateElement(selected.value.id, {
-      name: form.name,
-      type: form.type,
-      documentation: form.documentation
-    })
-  }
+function save() {
+  model.updateElement(local)
 }
 </script>
-
-<style scoped>
-.text-gray-500 {
-  padding: 12px;
-}
-</style>

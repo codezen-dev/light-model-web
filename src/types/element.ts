@@ -5,6 +5,6 @@ export interface Element {
   owner?: string
   documentation?: string
   modifiers?: string[]
-  metadata?: Record<string, any>
+  metadata: Record<string, any>
   children?: Element[]
 }

@@ -1,7 +1,7 @@
 // src/store/model.ts
 import { defineStore } from 'pinia'
 import type { Element } from '@/types/element'
-import { fetchElements, createElement, updateElement, deleteElement } from '@/api/elements'
+import {fetchElements, createElement, deleteElement, updateElementApi, getDslById, getFullDsl} from '@/api/elements'
 
 export const useModelStore = defineStore('model', {
     state: () => ({
@@ -30,19 +30,21 @@ export const useModelStore = defineStore('model', {
             parent.children.push(res.data)
         },
 
-        async updateElement(id: string, payload: Partial<Element>) {
-            await updateElement(id, payload)
+        async updateElement(updated: Element) {
+            await updateElementApi(updated.id, updated)
+
             const applyUpdate = (elements: Element[]) => {
                 for (const el of elements) {
-                    if (el.id === id) {
-                        Object.assign(el, payload)
+                    if (el.id === updated.id) {
+                        Object.assign(el, updated)
                         return
                     }
                     if (el.children) applyUpdate(el.children)
                 }
             }
             applyUpdate(this.rootElements)
-        },
+        }
+        ,
 
         async deleteElementById(id: string) {
             await deleteElement(id)
@@ -64,20 +66,14 @@ export const useModelStore = defineStore('model', {
             this.selected = null
         },
 
-        generateDsl(): string {
-            const renderElement = (el: Element, indent = 0): string => {
-                const pad = '  '.repeat(indent)
-                let dsl = `${pad}${el.type} ${el.name}`
-                if (el.documentation) dsl += ` // ${el.documentation}`
-                dsl += '\n'
-                if (el.children) {
-                    for (const child of el.children) {
-                        dsl += renderElement(child, indent + 1)
-                    }
-                }
-                return dsl
-            }
-            return this.rootElements.map(el => renderElement(el)).join('')
+    // ✅ 添加方法，封装后端 DSL 导出逻辑
+    async exportDslBySelection(): Promise<string> {
+        if (this.selected?.id) {
+            return await getDslById(this.selected.id)
+        } else {
+            return await getFullDsl()
         }
     }
+    }
+
 })
